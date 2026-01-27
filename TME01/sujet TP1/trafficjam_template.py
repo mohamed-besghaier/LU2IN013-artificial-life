@@ -43,16 +43,34 @@ def init_simulation(params):
 
     grid = np.zeros((dx, dy), dtype=np.uint8)
     newgrid = np.empty((dx, dy), dtype=np.uint8)
+    
+    for x in range (dx) :
+        if random.random() < density :
+            grid[x, 0] = CAR
 
-    grid[dx // 2, dy // 2] = CAR
+    grid[dx // 2, 0] = EMPTY
 
     return grid, newgrid
 
 @njit(cache=True)
 def ca_step(grid, newgrid):
     dx, dy = grid.shape
+    
     for x in range(dx):
-        newgrid[x, 0] = grid[x, 0] # simple copy of state
+        newgrid[x, 0] = EMPTY
+    
+    for x in range(dx):
+        if grid[x, 0] == CAR:
+            next_x = (x + 1) % dx
+            
+            if random.random() < 0.3 :
+                if grid[next_x, 0] == EMPTY:
+                    newgrid[next_x, 0] = CAR
+                    newgrid[x, 0] = EMPTY
+                else:
+                    newgrid[x, 0] = CAR
+            else :
+                newgrid[x, 0] = CAR
 
 # =-=-= run
 
