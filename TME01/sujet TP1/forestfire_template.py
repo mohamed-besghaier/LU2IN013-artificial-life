@@ -28,12 +28,14 @@ colors = {
     ASH: (0, 0, 0)
 }
 
+# global variables
+
 iteration = 1
-total_arbres_start = 0
+total_trees_start = 0
 
 # creation csv file
 
-file = open('arbres.csv', mode='w')
+file = open('trees.csv', mode='w')
 file.close()
 
 # =-=-= simulation parameters
@@ -48,6 +50,8 @@ def make_agents(params): # DO NOTHING
     return []
 
 # =-=-= user-defined callular automata
+
+# Check the neighbors of a grid
 
 def check_FIRE (grid, x, y, dx, dy) :
     if grid[(x-1)%dx, y] == FIRE : return True
@@ -68,8 +72,10 @@ def check_FIRE (grid, x, y, dx, dy) :
 
     return False
 
+# Initialising the simulation
+
 def init_simulation(params):
-    global total_arbres_start
+    global total_trees_start
     
     density = params["density"]
     dx = params["dx"]
@@ -85,17 +91,19 @@ def init_simulation(params):
     
     grid[dx // 2, dy // 2] = FIRE
     
-    total_arbres_start = np.sum(grid == TREE)
+    total_trees_start = np.sum(grid == TREE)
 
     return grid, newgrid
 
+
+# Live simulation
+
 #@njit(cache=True)
 def ca_step(grid, newgrid):
-    global iteration, total_arbres_start
-    
-    fraction_arbres_prec = 1
-    
+    global iteration, total_trees_start
+        
     dx, dy = grid.shape
+
     for x in range(dx):
         for y in range(dy):
             if grid[x, y] == ASH:
@@ -109,15 +117,28 @@ def ca_step(grid, newgrid):
                     newgrid[x, y] = TREE
             else:
                 newgrid[x, y] = EMPTY
-    
-    fraction_arbres = np.sum(newgrid == TREE)/total_arbres_start
-    if fraction_arbres != fraction_arbres_prec:
-        with open("arbres.csv", "a", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([iteration, fraction_arbres])
             
-        iteration += 1
-        file.close()
+            # p1 is the probability the tree burns
+            # p2 is the probability that a new tree grows
+            
+            if iteration > 70 :
+                p1 = random.random()
+                p2 = random.random()
+            
+                if p1 < 0.002 :
+                    if newgrid[x,y] == TREE : newgrid[x,y] = FIRE
+            
+                if p2 < 0.006 : 
+                    if newgrid[x,y] == EMPTY : newgrid[x,y] = TREE
+                    
+    # Save updated tree fraction
+    
+    trees_fraction = np.sum(newgrid == TREE)/total_trees_start
+    with open("trees.csv", "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([iteration, trees_fraction])
+            
+    iteration += 1
 
 # =-=-= run
 
