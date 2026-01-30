@@ -35,7 +35,7 @@ total_trees_start = 0
 
 # creation csv file
 
-file = open('trees.csv', mode='w')
+file = open('./TME01/trees.csv', mode='w')
 file.close()
 
 # =-=-= simulation parameters
@@ -134,7 +134,7 @@ def ca_step(grid, newgrid):
     # Save updated tree fraction
     
     trees_fraction = np.sum(newgrid == TREE)/total_trees_start
-    with open("trees.csv", "a", newline="") as f:
+    with open("./TME01/trees.csv", "a", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([iteration, trees_fraction])
             
