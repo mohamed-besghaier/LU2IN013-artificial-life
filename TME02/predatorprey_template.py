@@ -25,14 +25,14 @@ from calipsolib import Agent
 # =-=-= simulation parameters
 
 params = {
-    "P_prey_alive" : 0.5,
-    "P_predator_alive" : 0.5,
+    "P_prey_alive" : 0.01,
+    "P_predator_alive" : 0.0033,
     "R_famine" : 600,
     "iteration" : 1,
-    "len_agents" : 30
+    "iteration_reproduce" : 5,
+    "iteration_trail" : 10,
+    "len_agents" : 50
 }
-
-params["iteration_proba"] = params["len_agents"]//2
 
 # =-=-= Defining cell types
 
@@ -68,86 +68,92 @@ colors_agents = {
 # =-=-= user-defined agents
 
 class Predator(Agent):
-    def __init__(self, x: float, y: float, params):
+    def __init__(self, x, y, params):
         super().__init__(x, y, "Predator", params)
         self.type = PREDATOR
         self.running = True
         self.trail = True
-        self.eat = 1
+        self.hunger = 0
 
     def move(self, grid, agents):
-        delta_x, delta_y = random.choice(( (-1, -1), (-1, 0), (-1, 1), ( 0, -1), ( 0, 1), ( 1, -1), ( 1, 0), ( 1, 1) ))
+        if not self.running :
+            return
+
+        delta_x, delta_y = random.choice(
+            [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        )
         self.x = (self.x + delta_x) % self.dx
         self.y = (self.y + delta_y) % self.dy
-
-        self.eat += 1
 
         if self.trail :
             grid[self.x, self.y] = PREDATOR_TRAIL
 
-        if params["R_famine"] == self.eat :
+        # Check if a Predator ate a Prey
+        ate = False
+        for agent in agents:
+            if agent.type == PREY and agent.running:
+                if agent.x == self.x and agent.y == self.y:
+                    agent.running = False
+                    agent.trail = False
+                    ate = True
+                    self.hunger = 0
+                    break
+
+        if not ate :
+            self.hunger += 1
+
+        # Check if a Predator did not eat in R_famine days
+        if self.hunger >= params["R_famine"] :
             self.running = False
-            grid[self.x, self.y] = EMPTY
             self.trail = False
-
-        for i in range(params["len_agents"]//2) :
-            if (agents[i].x == self.x and agents[i].y == self.y ) :
-                self.eat = 1
-
-        if params["iteration_proba"] == 0 :
-            if random.random() < params["P_predator_alive"] :
-                self.running = True
-                grid[self.x, self.y] = PREDATOR_TRAIL
-                self.trail = True
-            
-            params["iteration_proba"] = params["len_agents"]//2
+            grid[self.x, self.y] = EMPTY
+            return
         
-class Prey(Agent):    
-    def __init__(self, x: float, y: float, params):
+        # Reproduce a Predator
+        if self.running and (params["iteration"] % params["iteration_reproduce"] == 0) :
+            if random.random() < params["P_predator_alive"] :
+                agents.append(Predator(self.x, self.y, params))
+                params["len_agents"] += 1
 
+class Prey(Agent):
+    def __init__(self, x, y, params):
         super().__init__(x, y, "Prey", params)
         self.type = PREY
         self.running = True
         self.trail = True
 
-    def move(self, grid, agents) :
+    def move(self, grid, agents):
+        if not self.running :
+            return
 
-        delta_x, delta_y = random.choice(( (-1, -1), (-1, 0), (-1, 1), ( 0, -1), ( 0, 1), ( 1, -1), ( 1, 0), ( 1, 1) ))
+        delta_x, delta_y = random.choice(
+            [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        )
         self.x = (self.x + delta_x) % self.dx
         self.y = (self.y + delta_y) % self.dy
 
-        for i in range(params["len_agents"]//2, params["len_agents"]) :
-            if (agents[i].x == self.x and agents[i].y == self.y ) :
-                self.running = False
-                grid[self.x, self.y] = EMPTY
-                self.trail = False
-                
-            else :
-                if self.trail :
-                    grid[self.x, self.y] = PREY_TRAIL
+        if self.trail :
+            grid[self.x, self.y] = PREY_TRAIL
 
-        if params["iteration_proba"] == 0 :
-        
-            if random.random() < params["P_prey_alive"] :
-                self.running = True
-                grid[self.x, self.y] = PREY_TRAIL
-                self.trail = True
-            
-            params["iteration_proba"] = params["len_agents"]//2
-        
+        # Reproduce a Prey
+        if self.running and (params["iteration"] % params["iteration_reproduce"] == 0):
+            if random.random() < params["P_prey_alive"]:
+                agents.append(Prey(self.x, self.y, params))
+                params["len_agents"] += 1
+
+# =-=-= make agents
 
 def make_agents(params):
     dx = params["dx"]
     dy = params["dy"]
-
     Agent_List = []
 
-    for i in range (params["len_agents"]//2) :
-        Agent_List.append(Prey(x = random.randint(0, dx-1), y = random.randint(0, dy-1), params = params))
+    for i in range(params["len_agents"] - params["len_agents"]//3) :
+        Agent_List.append(Prey(random.randint(0, dx-1), random.randint(0, dy-1), params))
+        
+    for i in range(params["len_agents"] - params["len_agents"]//3, params["len_agents"]) :
+        Agent_List.append(Predator(random.randint(0, dx-1), random.randint(0, dy-1), params))
 
-    for i in range (params["len_agents"]//2, params["len_agents"]) :
-        Agent_List.append(Predator(x = random.randint(0, dx-1), y = random.randint(0, dy-1), params = params))
-    
     return Agent_List
 
 # =-=-= user-defined cellular automata
@@ -155,11 +161,10 @@ def make_agents(params):
 def init_simulation(params):
     dx = params["dx"]
     dy = params["dy"]
-
+    
     grid = np.zeros((dx, dy), dtype=np.uint8)
-
     newgrid = np.empty((dx, dy), dtype=np.uint8)
-
+    
     return grid, newgrid
 
 # @njit(cache=True)
@@ -171,10 +176,13 @@ def ca_step(grid, newgrid):
     for x in range(dx):
         for y in range(dy):
             newgrid[x,y] = grid[x,y]
+            
+            # Prevent the long trails
+            if params["iteration"]%params["iteration_trail"] == 0 :
+                if newgrid[x,y] == PREDATOR_TRAIL or newgrid[x,y] == PREY_TRAIL :
+                    newgrid[x,y] = EMPTY
     
     params["iteration"] = params["iteration"] + 1
-    params["iteration_proba"] = params["iteration_proba"] -1
-    params["R_famine"] = params["R_famine"] - 1
 
 # =-=-= run
 
