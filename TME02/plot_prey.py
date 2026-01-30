@@ -15,7 +15,8 @@ with open("Prey_Count.csv", "r") as f:
 # Plot
 plt.plot(iterations, fractions, color='green')
 plt.xlabel("Iterations")
-plt.ylabel("Number of Prey")
-plt.title("Prey Evolution")
+plt.ylabel("Number of Preys")
+plt.title("Prey over time")
 plt.grid(True)
+plt.savefig("Prey_plot.png", dpi=300)
 plt.show()
