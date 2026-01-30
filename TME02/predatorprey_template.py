@@ -56,7 +56,7 @@ colors_ca = {
 
 # File Creation
 
-file = open ("Prey_Count.csv", "w")
+file = open ("./TME02/Prey_Count.csv", "w")
 file.close ()
 
 # =-=-= Defining agent types
@@ -203,7 +203,7 @@ def ca_step(grid, newgrid):
                 if newgrid[x,y] == PREDATOR_TRAIL or newgrid[x,y] == PREY_TRAIL :
                     newgrid[x,y] = EMPTY
                     
-    with open("Prey_Count.csv", "a", newline="") as file :
+    with open("./TME02/Prey_Count.csv", "a", newline="") as file :
         writer = csv.writer(file)
         writer.writerow([params["iteration"], params["prey_count"]])
     
