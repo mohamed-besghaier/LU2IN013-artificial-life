@@ -33,8 +33,13 @@ else:
 
 debug = False
 
+PngFileName = ""
 
 def getContentFromFile( filename ):
+    global PngFileName
+    
+    PngFileName = filename
+    
     fichier = open(filename)
     lines = fichier.readlines()
     fichier.close()
@@ -71,6 +76,7 @@ def getMaximumLength ( myList ): # return the length of maximally lengthy sub-el
 # code below adapted from: http://blog.bharatbhole.com/creating-boxplots-with-matplotlib/
 # ###
 def traceData( x, y, type="single", title="", xLabel="", yLabel="", xlimMin=-1, xlimMax=-1, ylimMin=-1, ylimMax=-1, legendLabel="", locLegend='upper right', autoscaling=False, outputFilename="empty"):
+    global PngFileName
     
     #pl.gca().set_color_cycle(['red', 'green', 'blue', 'orange', 'violet', 'darkblue', 'black','purple','cyan','brown']) # force cycle through specified colors
 
@@ -115,6 +121,8 @@ def traceData( x, y, type="single", title="", xLabel="", yLabel="", xlimMin=-1, 
         outputFilename = "graph_"+getTimestamp()+".pdf"
     
     fig.savefig(outputFilename, format="pdf", bbox_inches='tight') """
+    
+    pl.savefig(PngFileName[:PngFileName.find(".csv")] + ".png", dpi=300)
     
     # Display
     pl.show() # mandatory: call after savefig(.)
