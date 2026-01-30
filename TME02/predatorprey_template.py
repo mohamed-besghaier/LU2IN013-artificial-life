@@ -9,6 +9,7 @@
 
 import random
 import numpy as np
+import csv
 
 try:
     from numba import njit
@@ -25,13 +26,16 @@ from calipsolib import Agent
 # =-=-= simulation parameters
 
 params = {
-    "P_prey_alive" : 0.01,
+    "P_prey_alive" : 0.0090,
     "P_predator_alive" : 0.0033,
     "R_famine" : 600,
     "iteration" : 1,
     "iteration_reproduce" : 5,
     "iteration_trail" : 10,
-    "len_agents" : 50
+    "len_agents" : 50,
+    "prey_count" : 0,
+    "pred_count" : 0,
+    "counted_this_iteration" : False
 }
 
 # =-=-= Defining cell types
@@ -67,7 +71,7 @@ colors_agents = {
 
 # =-=-= user-defined agents
 
-class Predator(Agent):
+class Predator(Agent) :    
     def __init__(self, x, y, params):
         super().__init__(x, y, "Predator", params)
         self.type = PREDATOR
@@ -76,6 +80,13 @@ class Predator(Agent):
         self.hunger = 0
 
     def move(self, grid, agents):
+        
+        # Count the number of Preys and Predators
+        if not params["counted_this_iteration"]:
+            params["prey_count"] = sum(1 for a in agents if a.type == PREY and a.running)
+            params["pred_count"] = sum(1 for a in agents if a.type == PREDATOR and a.running)
+            params["counted_this_iteration"] = True
+    
         if not self.running :
             return
 
@@ -116,6 +127,7 @@ class Predator(Agent):
                 params["len_agents"] += 1
 
 class Prey(Agent):
+    
     def __init__(self, x, y, params):
         super().__init__(x, y, "Prey", params)
         self.type = PREY
@@ -123,6 +135,13 @@ class Prey(Agent):
         self.trail = True
 
     def move(self, grid, agents):
+        
+        # Count the number of Preys and Predators
+        if not params["counted_this_iteration"]:
+            params["prey_count"] = sum(1 for a in agents if a.type == PREY and a.running)
+            params["pred_count"] = sum(1 for a in agents if a.type == PREDATOR and a.running)
+            params["counted_this_iteration"] = True
+            
         if not self.running :
             return
 
@@ -172,6 +191,8 @@ def ca_step(grid, newgrid):
     global params
 
     dx, dy = grid.shape
+    
+    params["counted_this_iteration"] = False
 
     for x in range(dx):
         for y in range(dy):
@@ -181,6 +202,10 @@ def ca_step(grid, newgrid):
             if params["iteration"]%params["iteration_trail"] == 0 :
                 if newgrid[x,y] == PREDATOR_TRAIL or newgrid[x,y] == PREY_TRAIL :
                     newgrid[x,y] = EMPTY
+                    
+    with open("Prey_Count.csv", "a", newline="") as file :
+        writer = csv.writer(file)
+        writer.writerow([params["iteration"], params["prey_count"]])
     
     params["iteration"] = params["iteration"] + 1
 
