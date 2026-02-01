@@ -11,14 +11,14 @@ Course materials and simple templates for the LU2IN013 practicals (agent-based m
 - **Python ≤ 3.11** — this project is intended for Python 3.11 and earlier (tested with Python 3.11)
 - Install Python packages listed in `requirements.txt` (see below)
 
-## Setup (quick)
+## Setup
 - Install dependencies:
 
    ```bash
    py -3.11 -m pip install -r requirements.txt
    ```
 
-## Quick start - How to execute files
+## Quick start
 - Run any simulation:
 
   ```bash
