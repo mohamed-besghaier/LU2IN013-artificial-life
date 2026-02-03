@@ -26,11 +26,13 @@ from calipsolib import Agent
 # =-=-= simulation parameters
 
 params = {
-    "P_prey_alive" : 0.0090,
-    "P_predator_alive" : 0.0033,
+    "P_prey_alive" : 0.10,
+    "P_predator_alive" : 0.02,
     "P_prey_movement" : 0.75,
     "P_predator_movement" : 1,
-    "R_famine" : 600,
+    "P_tree" : 0.01,
+    "R_famine_prey" : 600,
+    "R_famine_predator" : 600,
     "iteration" : 1,
     "iteration_reproduce" : 5,
     "iteration_trail" : 10,
@@ -58,11 +60,11 @@ colors_ca = {
 
 # Files Creation
 
-file_PREY = open ("./TME02/PREY_Count.csv", "w")
-file_PREY.close ()
+file = open ("./TME02/PREY_Count.csv", "w")
+file.close ()
 
-file_PRED = open ("./TME02/PREDATOR_Count.csv", "w")
-file_PRED.close ()
+file = open ("./TME02/PREDATOR_Count.csv", "w")
+file.close ()
 
 # =-=-= Defining agent types
 
@@ -95,13 +97,50 @@ class Predator(Agent) :
         if not self.running :
             return
         
-        delta_x, delta_y = random.choice(
-            [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        )
+        delta_x, delta_y = random.choice([(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
+        
         self.x = (self.x + delta_x) % self.dx
         self.y = (self.y + delta_y) % self.dy
         
         if self.trail :
+            
+            # Check if a Prey is adjacent or not, and follow it if true
+            for a in agents :
+                if a.type == PREY and a.running :
+                    if a.x == self.x and a.y == (self.y - 1)%self.dy :
+                        self.y = (self.y - 1)%self.dy
+                        break
+                    
+                    if a.x == self.x and a.y == (self.y - 2)%self.dy :
+                        self.y = (self.y - 2)%self.dy
+                        break
+                        
+                    if a.x == self.x and a.y == (self.y + 1)%self.dy :
+                        self.y = (self.y + 1)%self.dy
+                        break
+                    
+                    if a.x == self.x and a.y == (self.y + 2)%self.dy :
+                        self.y = (self.y + 2)%self.dy
+                        break
+                        
+                    if a.y == self.y and a.x == (self.x - 1)%self.dx :
+                        self.x = (self.x - 1)%self.dx
+                        break
+                        
+                    if a.y == self.y and a.x == (self.x - 2)%self.dx :
+                        self.x = (self.x - 2)%self.dx
+                        break
+                    
+                    if a.x == (self.x - 1)%self.dx and a.y == (self.y + 1)%self.dy :
+                        self.x = (self.x - 1)%self.dx
+                        self.y = (self.y + 1)%self.dy
+                        break
+                    
+                    if a.x == (self.x - 1)%self.dx and a.y == (self.y - 1)%self.dy :
+                        self.x = (self.x - 1)%self.dx
+                        self.y = (self.y - 1)%self.dy
+                        break
+                        
             grid[self.x, self.y] = PREDATOR_TRAIL
 
         # Check if a Predator ate a Prey
@@ -118,18 +157,19 @@ class Predator(Agent) :
         if not ate :
             self.hunger += 1
 
-        # Check if a Predator did not eat in R_famine days
-        if self.hunger >= params["R_famine"] :
+        # Check if a Predator did not eat in R_famine_predator days
+        if self.hunger >= params["R_famine_predator"] :
             self.running = False
             self.trail = False
             grid[self.x, self.y] = EMPTY
             return
         
         # Reproduce a Predator
-        if self.running and (params["iteration"] % params["iteration_reproduce"] == 0) :
-            if random.random() < params["P_predator_alive"] :
-                agents.append(Predator(self.x, self.y, params))
-                params["len_agents"] += 1
+        if self.running and (params["iteration"] % (params["iteration_reproduce"]*2) == 0) :
+            if random.random() <= params["P_predator_alive"] :
+                if params["predator_count"] <= 40 :
+                    agents.append(Predator(self.x, self.y, params))
+                    params["len_agents"] += 1
 
 class Prey(Agent):
     
@@ -149,22 +189,43 @@ class Prey(Agent):
             
         if not self.running :
             return
-
-        delta_x, delta_y = random.choice(
-            [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        )
-        self.x = (self.x + delta_x) % self.dx
-        self.y = (self.y + delta_y) % self.dy
         
+        # Limit the preys movements with a probability 'P_Prey_movement'
         if (random.random() <= params["P_prey_movement"]) :
+            delta_x, delta_y = random.choice([(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
+            
+            self.x = (self.x + delta_x) % self.dx
+            self.y = (self.y + delta_y) % self.dy
+
             if self.trail :
+                
+                # Check if a Predator is adjacent or not, and escape it if true
+                for a in agents :
+                    if a.type == PREDATOR and a.running :
+                        if a.x == self.x and a.y == (self.y - 1)%self.dy :
+                            self.y = (self.y + 1)%self.dy
+                            break
+                        
+                        if a.x == self.x and a.y == (self.y + 1)%self.dy :
+                            self.y = (self.y - 1)%self.dy
+                            break
+                        
+                        if a.y == self.y and a.x == (self.x - 1)%self.dx :
+                            self.x = (self.x + 1)%self.dx
+                            break
+                        
+                        if a.y == self.y and a.x == (self.x + 1)%self.dx :
+                            self.x = (self.x - 1)%self.dy
+                            break
+                            
                 grid[self.x, self.y] = PREY_TRAIL
 
         # Reproduce a Prey
         if self.running and (params["iteration"] % params["iteration_reproduce"] == 0):
-            if random.random() < params["P_prey_alive"]:
-                agents.append(Prey(self.x, self.y, params))
-                params["len_agents"] += 1
+            if random.random() <= params["P_prey_alive"] :
+                if params["prey_count"] <= 120 :
+                    agents.append(Prey(self.x, self.y, params))
+                    params["len_agents"] += 1
 
 # =-=-= make agents
 
