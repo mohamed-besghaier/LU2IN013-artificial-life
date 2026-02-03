@@ -32,6 +32,7 @@ params = {
     "P_prey_movement" : 0.75,
     "P_predator_movement" : 1,
     "P_tree" : 0.00001,
+    "P_fire" : 0.0001,
     "R_famine_prey" : 80,
     "R_famine_predator" : 240,
     "iteration" : 1,
@@ -50,11 +51,13 @@ TREE = 1
 FIRE = 2
 PREY_TRAIL = 3
 PREDATOR_TRAIL = 4
+ASH = 5
 
 colors_ca = {
     EMPTY: (255, 255, 255),
     TREE:  (40, 200, 40),
     FIRE:  (255, 40, 40),
+    ASH: (0, 0, 0),
     PREY_TRAIL: (224, 224, 255),
     PREDATOR_TRAIL:  (255, 224, 224),
 }
@@ -142,8 +145,8 @@ class Predator(Agent) :
                         self.y = (self.y - 1)%self.dy
                         break
             
-            # Check if a predator encounter a tree
-            if grid[self.x, self.y] != TREE :
+            # Check if a predator encounter a tree/fire/ash
+            if grid[self.x, self.y] not in [FIRE, ASH, TREE] :
                 grid[self.x, self.y] = PREDATOR_TRAIL
             else :
                 pass
@@ -229,8 +232,12 @@ class Prey(Agent):
                 if grid[self.x, self.y] == TREE :
                     ate = True
                     self.hunger = 0
-                
-                grid[self.x, self.y] = PREY_TRAIL
+                    
+                # Check if a prey encounter a tree/fire/ash
+                if grid[self.x, self.y] not in [FIRE, ASH] :
+                    grid[self.x, self.y] = PREY_TRAIL
+                else :
+                    pass
                 
                 if not ate :
                     self.hunger += 1
@@ -265,6 +272,26 @@ def make_agents(params):
 
     return Agent_List
 
+# Check if a tree is adjacent to fire
+def check_FIRE (grid, x, y, dx, dy) :
+    if grid[(x-1)%dx, y] == FIRE : return True
+
+    if grid[(x+1)%dx, y] == FIRE : return True
+
+    if grid[x, (y-1)%dy] == FIRE : return True
+
+    if grid[x, (y+1)%dy] == FIRE : return True 
+
+    if grid[(x-1)%dx, (y-1)%dy] == FIRE : return True
+
+    if grid[(x-1)%dx, (y+1)%dy] == FIRE : return True
+
+    if grid[(x+1)%dx, (y-1)%dy] == FIRE : return True
+
+    if grid[(x+1)%dx, (y+1)%dy] == FIRE : return True
+
+    return False
+
 # =-=-= user-defined cellular automata
 
 def init_simulation(params):
@@ -273,6 +300,8 @@ def init_simulation(params):
     
     grid = np.zeros((dx, dy), dtype=np.uint8)
     newgrid = np.empty((dx, dy), dtype=np.uint8)
+    
+    grid[dx // 2, dy // 2] = FIRE
     
     return grid, newgrid
 
@@ -288,12 +317,39 @@ def ca_step(grid, newgrid):
 
     for x in range(dx):
         for y in range(dy):
-            newgrid[x,y] = grid[x,y]
             
-            # Produce a tree with a probability of 'P_tree'
-            if random.random() <= params["P_tree"] :
-                if newgrid[x,y] not in [PREY_TRAIL, PREDATOR_TRAIL] :
+            if grid[x,y] == PREDATOR_TRAIL :
+                newgrid[x, y] = PREDATOR_TRAIL
+                
+            elif grid[x,y] == PREY_TRAIL :
+                newgrid[x, y] = PREY_TRAIL
+            
+            # Trees simulation
+            elif grid[x, y] == TREE :
+                if check_FIRE(grid, x, y, dx, dy) :
+                    newgrid[x, y] = FIRE
+                else:
+                    newgrid[x, y] = TREE
+                    
+            elif grid[x, y] == FIRE :
+                newgrid[x, y] = ASH
+                    
+            elif grid[x, y] == ASH :
+                newgrid[x, y] = EMPTY
+                
+            else:
+                newgrid[x, y] = EMPTY
+                
+                
+            if newgrid[x,y] == EMPTY :
+            
+                # Produce a tree with a probability of 'P_tree'
+                if random.random() <= params["P_tree"] :
                     newgrid[x,y] = TREE
+            
+                # Produce a fire with a probability of 'P_fire'
+                elif random.random() <= params["P_fire"] :
+                    newgrid[x,y] = FIRE
             
             # Prevent the long trails
             if params["iteration"]%params["iteration_trail"] == 0 :
@@ -308,7 +364,7 @@ def ca_step(grid, newgrid):
         writer = csv.writer(file)
         writer.writerow([params["iteration"], params["predator_count"]])
     
-    params["iteration"] = params["iteration"] + 1
+    params["iteration"] += 1
 
 # =-=-= run
 
