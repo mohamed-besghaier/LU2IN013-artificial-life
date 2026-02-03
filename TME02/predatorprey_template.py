@@ -26,12 +26,12 @@ from calipsolib import Agent
 # =-=-= simulation parameters
 
 params = {
-    "P_prey_alive" : 0.10,
+    "P_prey_alive" : 0.09,
     "P_predator_alive" : 0.02,
     "P_prey_movement" : 0.75,
     "P_predator_movement" : 1,
-    "P_tree" : 0.01,
-    "R_famine_prey" : 600,
+    "P_tree" : 0.00001,
+    "R_famine_prey" : 100,
     "R_famine_predator" : 600,
     "iteration" : 1,
     "iteration_reproduce" : 5,
@@ -140,9 +140,13 @@ class Predator(Agent) :
                         self.x = (self.x - 1)%self.dx
                         self.y = (self.y - 1)%self.dy
                         break
-                        
-            grid[self.x, self.y] = PREDATOR_TRAIL
-
+            
+            # Check if a predator encounter a tree
+            if grid[self.x, self.y] != TREE :
+                grid[self.x, self.y] = PREDATOR_TRAIL
+            else :
+                pass
+            
         # Check if a Predator ate a Prey
         ate = False
         for agent in agents:
@@ -167,7 +171,7 @@ class Predator(Agent) :
         # Reproduce a Predator
         if self.running and (params["iteration"] % (params["iteration_reproduce"]*2) == 0) :
             if random.random() <= params["P_predator_alive"] :
-                if params["predator_count"] <= 40 :
+                if params["predator_count"] <= 20 :
                     agents.append(Predator(self.x, self.y, params))
                     params["len_agents"] += 1
 
@@ -178,6 +182,7 @@ class Prey(Agent):
         self.type = PREY
         self.running = True
         self.trail = True
+        self.hunger = 0
 
     def move(self, grid, agents):
         
@@ -217,13 +222,30 @@ class Prey(Agent):
                         if a.y == self.y and a.x == (self.x + 1)%self.dx :
                             self.x = (self.x - 1)%self.dy
                             break
-                            
+                
+                # Check if a prey ate a tree or not
+                ate = False
+                if grid[self.x, self.y] == TREE :
+                    ate = True
+                    self.hunger = 0
+                
                 grid[self.x, self.y] = PREY_TRAIL
+                
+                if not ate :
+                    self.hunger += 1
+                
+                # Check if a Prey did not eat in R_famine_prey days
+                if self.hunger >= params["R_famine_prey"] :
+                    self.running = False
+                    self.trail = False
+                    grid[self.x, self.y] = EMPTY
+                    return
+                        
 
         # Reproduce a Prey
-        if self.running and (params["iteration"] % params["iteration_reproduce"] == 0):
+        if self.running and (params["iteration"] % params["iteration_reproduce"] == 0) :
             if random.random() <= params["P_prey_alive"] :
-                if params["prey_count"] <= 120 :
+                if params["prey_count"] <= 60 :
                     agents.append(Prey(self.x, self.y, params))
                     params["len_agents"] += 1
 
@@ -264,6 +286,11 @@ def ca_step(grid, newgrid):
     for x in range(dx):
         for y in range(dy):
             newgrid[x,y] = grid[x,y]
+            
+            # Produce a tree with a probability of 'P_tree'
+            if random.random() <= params["P_tree"] :
+                if newgrid[x,y] not in [PREY_TRAIL, PREDATOR_TRAIL] :
+                    newgrid[x,y] = TREE
             
             # Prevent the long trails
             if params["iteration"]%params["iteration_trail"] == 0 :
