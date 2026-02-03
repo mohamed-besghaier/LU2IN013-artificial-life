@@ -10,6 +10,7 @@
 import random
 import numpy as np
 import csv
+import pygame
 
 try:
     from numba import njit
@@ -31,8 +32,8 @@ params = {
     "P_prey_movement" : 0.75,
     "P_predator_movement" : 1,
     "P_tree" : 0.00001,
-    "R_famine_prey" : 100,
-    "R_famine_predator" : 600,
+    "R_famine_prey" : 80,
+    "R_famine_predator" : 240,
     "iteration" : 1,
     "iteration_reproduce" : 5,
     "iteration_trail" : 10,
@@ -280,6 +281,8 @@ def ca_step(grid, newgrid):
     global params
 
     dx, dy = grid.shape
+    
+    pygame.display.set_caption(f"Population | Prey : {params['prey_count']} | Predators : {params['predator_count']}")
     
     params["counted_this_iteration"] = False
 
