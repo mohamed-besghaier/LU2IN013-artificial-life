@@ -28,13 +28,15 @@ from calipsolib import Agent
 params = {
     "P_prey_alive" : 0.0090,
     "P_predator_alive" : 0.0033,
+    "P_prey_movement" : 0.75,
+    "P_predator_movement" : 1,
     "R_famine" : 600,
     "iteration" : 1,
     "iteration_reproduce" : 5,
     "iteration_trail" : 10,
     "len_agents" : 50,
     "prey_count" : 0,
-    "pred_count" : 0,
+    "predator_count" : 0,
     "counted_this_iteration" : False
 }
 
@@ -54,10 +56,13 @@ colors_ca = {
     PREDATOR_TRAIL:  (255, 224, 224),
 }
 
-# File Creation
+# Files Creation
 
-file = open ("./TME02/Prey_Count.csv", "w")
-file.close ()
+file_PREY = open ("./TME02/PREY_Count.csv", "w")
+file_PREY.close ()
+
+file_PRED = open ("./TME02/PREDATOR_Count.csv", "w")
+file_PRED.close ()
 
 # =-=-= Defining agent types
 
@@ -84,18 +89,18 @@ class Predator(Agent) :
         # Count the number of Preys and Predators
         if not params["counted_this_iteration"]:
             params["prey_count"] = sum(1 for a in agents if a.type == PREY and a.running)
-            params["pred_count"] = sum(1 for a in agents if a.type == PREDATOR and a.running)
+            params["predator_count"] = sum(1 for a in agents if a.type == PREDATOR and a.running)
             params["counted_this_iteration"] = True
     
         if not self.running :
             return
-
+        
         delta_x, delta_y = random.choice(
             [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         )
         self.x = (self.x + delta_x) % self.dx
         self.y = (self.y + delta_y) % self.dy
-
+        
         if self.trail :
             grid[self.x, self.y] = PREDATOR_TRAIL
 
@@ -139,7 +144,7 @@ class Prey(Agent):
         # Count the number of Preys and Predators
         if not params["counted_this_iteration"]:
             params["prey_count"] = sum(1 for a in agents if a.type == PREY and a.running)
-            params["pred_count"] = sum(1 for a in agents if a.type == PREDATOR and a.running)
+            params["predator_count"] = sum(1 for a in agents if a.type == PREDATOR and a.running)
             params["counted_this_iteration"] = True
             
         if not self.running :
@@ -150,9 +155,10 @@ class Prey(Agent):
         )
         self.x = (self.x + delta_x) % self.dx
         self.y = (self.y + delta_y) % self.dy
-
-        if self.trail :
-            grid[self.x, self.y] = PREY_TRAIL
+        
+        if (random.random() <= params["P_prey_movement"]) :
+            if self.trail :
+                grid[self.x, self.y] = PREY_TRAIL
 
         # Reproduce a Prey
         if self.running and (params["iteration"] % params["iteration_reproduce"] == 0):
@@ -203,9 +209,13 @@ def ca_step(grid, newgrid):
                 if newgrid[x,y] == PREDATOR_TRAIL or newgrid[x,y] == PREY_TRAIL :
                     newgrid[x,y] = EMPTY
                     
-    with open("./TME02/Prey_Count.csv", "a", newline="") as file :
+    with open("./TME02/PREY_Count.csv", "a", newline="") as file :
         writer = csv.writer(file)
         writer.writerow([params["iteration"], params["prey_count"]])
+        
+    with open("./TME02/PREDATOR_Count.csv", "a", newline="") as file :
+        writer = csv.writer(file)
+        writer.writerow([params["iteration"], params["predator_count"]])
     
     params["iteration"] = params["iteration"] + 1
 
