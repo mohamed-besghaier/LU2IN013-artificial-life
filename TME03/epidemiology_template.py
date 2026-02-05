@@ -9,6 +9,7 @@
 
 import random
 import csv
+import pygame
 import numpy as np
 
 try:
@@ -60,13 +61,13 @@ colors_agents = {
 
 # Files creation
 
-file = open("SANE_Count.csv", "w")
+file = open("./TME03/SANE_Count.csv", "w")
 file.close()
 
-file = open("INFECTED_Count.csv", "w")
+file = open("./TME03/INFECTED_Count.csv", "w")
 file.close()
 
-file = open("RECOVER_Count.csv", "w")
+file = open("./TME03/RECOVER_Count.csv", "w")
 file.close()
 
 # =-=-= user-defined agents
@@ -165,6 +166,8 @@ def init_simulation(params):
 def ca_step(grid, newgrid):
     global params
 
+    pygame.display.set_caption(f"Sane : {params['sane_count']} | Infected : {params['infected_count']} | Recover : {params['recover_count']}")
+
     params["iteration_counted"] = False
 
     dx, dy = grid.shape
@@ -173,15 +176,15 @@ def ca_step(grid, newgrid):
         for y in range (dy):
             newgrid[x, y] = grid[x, y]
     
-    with open("SANE_Count.csv", "a", newline="") as file :
+    with open("./TME03/SANE_Count.csv", "a", newline="") as file :
         writer = csv.writer(file)
         writer.writerow([params["iteration"], params["sane_count"]])
 
-    with open("INFECTED_Count.csv", "a", newline="") as file :
+    with open("./TME03/INFECTED_Count.csv", "a", newline="") as file :
         writer = csv.writer(file)
         writer.writerow([params["iteration"], params["infected_count"]])
 
-    with open("RECOVER_Count.csv", "a", newline="") as file :
+    with open("./TME03/RECOVER_Count.csv", "a", newline="") as file :
         writer = csv.writer(file)
         writer.writerow([params["iteration"], params["recover_count"]])
 

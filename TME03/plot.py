@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df1 = pd.read_csv("SANE_Count.csv", header=None, names=["iteration", "count"])
-df2 = pd.read_csv("INFECTED_Count.csv", header=None, names=["iteration", "count"])
-df3 = pd.read_csv("RECOVER_Count.csv", header=None, names=["iteration", "count"])
+df1 = pd.read_csv("./TME03/SANE_Count.csv", header=None, names=["iteration", "count"])
+df2 = pd.read_csv("./TME03/INFECTED_Count.csv", header=None, names=["iteration", "count"])
+df3 = pd.read_csv("./TME03/RECOVER_Count.csv", header=None, names=["iteration", "count"])
 
 iteration = df1["iteration"]
 
@@ -14,4 +14,5 @@ plt.plot(iteration, df3["count"], label="RECOVER")
 plt.xlabel("Iteration")
 plt.ylabel("Count")
 plt.legend()
+plt.savefig("./TME03/Final_Plot.png", dpi=300)
 plt.show()
