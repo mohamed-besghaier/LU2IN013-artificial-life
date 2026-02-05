@@ -159,6 +159,7 @@ class Predator(Agent) :
                     agent.running = False
                     agent.trail = False
                     ate = True
+                    agents.remove(agent)
                     self.hunger = 0
                     break
 
@@ -170,6 +171,7 @@ class Predator(Agent) :
             self.running = False
             self.trail = False
             grid[self.x, self.y] = EMPTY
+            agents.remove(self)
             return
         
         # Reproduce a Predator
@@ -233,8 +235,8 @@ class Prey(Agent):
                     ate = True
                     self.hunger = 0
                     
-                # Check if a prey encounter a tree/fire/ash
-                if grid[self.x, self.y] not in [FIRE, ASH] :
+                # Check if a prey encounter a treefire/ash
+                if grid[self.x, self.y] not in [FIRE, ASH, PREDATOR_TRAIL] :
                     grid[self.x, self.y] = PREY_TRAIL
                 else :
                     pass
@@ -247,6 +249,7 @@ class Prey(Agent):
                     self.running = False
                     self.trail = False
                     grid[self.x, self.y] = EMPTY
+                    agents.remove(self)
                     return
                         
 
@@ -382,5 +385,5 @@ if __name__ == "__main__":
         display_dy=800,
         title="Predator-Prey (template)", 
         verbose=False, # display stuff (can be used by user)
-        fps=60 # steps per seconds (default: 60)
+        fps=10 # steps per seconds (default: 60)
     )
