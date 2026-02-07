@@ -7,6 +7,7 @@ This repository contains:
 ## Contents
 - `TME01` — traffic jam and forest fire templates
 - `TME02` — predator–prey template
+- `TME03` — sane-infected template
 - `plotCSV` — small utilities to plot any CSV data
 
 ## Requirements
