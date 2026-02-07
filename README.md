@@ -1,6 +1,8 @@
-# LU2IN013 - Artificial Life
+# University Project – Agent-Based Models & Cellular Automata
 
-Course materials and simple templates for the LU2IN013 practicals (agent-based models, cellular automata, and small simulations).
+This repository contains:
+- university-provided templates
+- my own implementations and extensions developed during the practical sessions (TME)
 
 ## Contents
 - `TME01` — traffic jam and forest fire templates
